@@ -1,19 +1,18 @@
 # -*- coding: utf-8 -*-
 
 from mainWindowUI import Ui_mainWindow
-from drawingBoardUIBusi import drawingBoardUIBusi
-from PyQt5.QtWidgets import (QWidget, QApplication, QMainWindow, QMenu, qApp, QDesktopWidget, QDialog, QMessageBox,
-    QFileDialog)
+from drawing_board_busi import DrawingBoardUIBusi
+from PyQt5.QtWidgets import (QApplication, QMainWindow, QMenu, qApp, QDesktopWidget,
+                             QMessageBox, QFileDialog)
 from PyQt5.QtCore import Qt, QEvent, QFile, QIODevice, QTextStream
 
 import sys
 
 
-class mainWindowBusi(QMainWindow, Ui_mainWindow):
-
+class MainWindowBusi(QMainWindow, Ui_mainWindow):
     def __init__(self):
 
-        super(mainWindowBusi, self).__init__()
+        super(MainWindowBusi, self).__init__()
         self.setupUi(self)
 
         # 设置控制窗体的位置
@@ -30,10 +29,10 @@ class mainWindowBusi(QMainWindow, Ui_mainWindow):
         # self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowSystemMenuHint)
         # self.setWindowFlags(Qt.CustomizeWindowHint | Qt.WindowTitleHint )
         # self.setWindowFlags(Qt.CustomizeWindowHint | Qt.WindowSystemMenuHint | Qt.WindowStaysOnTopHint)
-        self.setWindowFlags(Qt.CustomizeWindowHint | Qt.WindowSystemMenuHint )
+        self.setWindowFlags(Qt.CustomizeWindowHint | Qt.WindowSystemMenuHint)
         # self.setWindowFlags(Qt.SubWindow)
         # 获得白板对象
-        self.dbb = drawingBoardUIBusi()
+        self.dbb = DrawingBoardUIBusi()
         self.dbb.setupBusi()
 
         # 设置样式
@@ -70,7 +69,6 @@ class mainWindowBusi(QMainWindow, Ui_mainWindow):
         '''键盘事件处理'''
         pass
 
-
     def contextMenuEvent(self, event):
         '''右键菜单'''
 
@@ -92,16 +90,15 @@ class mainWindowBusi(QMainWindow, Ui_mainWindow):
 
         cmenu.exec_(self.mapToGlobal(event.pos()))
 
-
     def closeAction(self):
         '''退出程序'''
 
         message = QMessageBox()
-        message.setGeometry(200,200,200,200)
-        message.resize(200,300)
+        message.setGeometry(200, 200, 200, 200)
+        message.resize(200, 300)
         reply = message.question(self, 'Message',
-                                     "确定退出?", QMessageBox.Yes |
-                                     QMessageBox.No, QMessageBox.No)
+                                 "确定退出?", QMessageBox.Yes |
+                                 QMessageBox.No, QMessageBox.No)
 
         if reply == QMessageBox.Yes:
             qApp.quit()
@@ -116,10 +113,12 @@ class mainWindowBusi(QMainWindow, Ui_mainWindow):
     def openPPT(self):
         '''打开PPT'''
 
-        fileName = QFileDialog.getOpenFileName(self, '打开PPT', '.', "*.ppt;*.pptx;*.pptm;*.ppsx;*.pps;*.potx;*.pot;*.potm;*.odp;All File(*)")
+        fileName = QFileDialog.getOpenFileName(self, '打开PPT',
+                                               '.',
+                                               "*.ppt;*.pptx;*.pptm;*.ppsx;*.pps;*.potx;*.pot;*.potm;*.odp;All File(*)")
         if fileName[0]:
             import os
-            os.system('start '+fileName[0])
+            os.system('start ' + fileName[0])
 
     def showQR(self):
         '''显示会议二维码或编号'''
@@ -147,9 +146,8 @@ class mainWindowBusi(QMainWindow, Ui_mainWindow):
 
     def dragEnterEvent(self, e):
         '''拖拽输入事件'''
-        print(1)
+
         if e.mimeData().hasUrls():
-            print(2)
             if e.mimeData().urls()[0].fileName().split('.')[1] in ['ppt', 'pptx']:
                 e.accept()
             else:
@@ -159,14 +157,14 @@ class mainWindowBusi(QMainWindow, Ui_mainWindow):
 
     def dropEvent(self, e):
         '''拖放处理'''
+
         from os import system
         url = e.mimeData().urls()[0].url()[8:]
-        system('start '+url)
+        system('start ' + url)
 
 
 if __name__ == '__main__':
-
     app = QApplication(sys.argv)
-    mW = mainWindowBusi()
+    mW = MainWindowBusi()
     mW.show()
     sys.exit(app.exec_())

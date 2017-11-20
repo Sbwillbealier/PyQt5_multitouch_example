@@ -1,42 +1,39 @@
 # -*- coding: utf-8 -*-
 
-'''
-    2017-11-17 修改笔的颜色，添加日志logger
-'''
-
 import sys
+import logging
+import os
 
 from PyQt5.QtGui import QPainter, QPen, QPixmap
-from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import (QMessageBox, QMainWindow, QApplication, QDesktopWidget,
-                             QPushButton, QMenu, QAction, qApp, QFileDialog)
+from PyQt5.QtCore import Qt, QDateTime
+from PyQt5.QtWidgets import (QMainWindow, QApplication, QDesktopWidget,
+                             QPushButton, QMenu, QFileDialog)
 from drawingBoardUI import Ui_drawingBoard
-import logging
 
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.ERROR)
+logger.setLevel(logging.DEBUG)
 ch = logging.StreamHandler()
 formatter = logging.Formatter('%(levelname)s - %(message)s')
 ch.setFormatter(formatter)
 logger.addHandler(ch)
 
 
-class drawingBoardUIBusi(QMainWindow, Ui_drawingBoard):
+class DrawingBoardUIBusi(QMainWindow, Ui_drawingBoard):
     def __init__(self):
-        super(drawingBoardUIBusi, self).__init__()
+        super(DrawingBoardUIBusi, self).__init__()
 
         # 记录笔迹（坐标，颜色）
-        self.pos_xy = []  #[((x, y), c)]  c->0 1 2
+        self.pos_xy = []  # [((x, y), c)]  c->0 1 2
+        self.penColor = 0  # 笔的初始颜色黑色
 
         self.setMouseTracking(False)
 
         # 使用指定的画笔，宽度，钢笔样式，帽子样式和连接样式构造笔
-        self.pen = QPen(Qt.black, 3, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin)
-        self.penColor = 0 #笔的初始颜色黑色
+        self.pen = QPen(Qt.black, 4, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin)
 
         # 绘制在窗体上的painter
         self.paintToWindow = QPainter(self)
-        self.paintToWindow.setRenderHint(QPainter.SmoothPixmapTransform, True);
+        self.paintToWindow.setRenderHint(QPainter.SmoothPixmapTransform, True)
 
         # QPixMap
         cp = QDesktopWidget().availableGeometry()
@@ -46,7 +43,9 @@ class drawingBoardUIBusi(QMainWindow, Ui_drawingBoard):
         self.paintToPix.setRenderHint(QPainter.SmoothPixmapTransform, True)
 
     def setupBusi(self):
-        '''实现业务（信号和槽的连接）'''
+        '''
+        实现业务（信号和槽的连接）
+        '''
 
         # 获取显示器的分辨率
         cp = QDesktopWidget().availableGeometry()
@@ -135,14 +134,11 @@ class drawingBoardUIBusi(QMainWindow, Ui_drawingBoard):
     def paintEvent(self, event):
         '''绘图事件'''
 
-        logger.debug('开始绘画事件')
         # 绘制在窗口上
         self.paintToWindow.begin(self)
 
         # 绘制在PixMap上
         self.paintToPix.begin(self.pixMap)
-
-        logger.debug('设置pixMap、画笔成功')
 
         '''
             首先判断pos_xy列表中是不是至少有两个点了
@@ -162,16 +158,11 @@ class drawingBoardUIBusi(QMainWindow, Ui_drawingBoard):
             这样，不断地将相邻两个点之间画线，就能留下鼠标移动轨迹了
         '''
 
-
         if len(self.pos_xy) > 1:
-            logger.debug('判断轨迹是否为空')
-
             point_start = self.pos_xy[0][0]
-            logger.debug('point_start%s', point_start)
 
             for pos_tmp in self.pos_xy:
 
-                logger.debug('pos_tmp%s', pos_tmp)
                 point_end = pos_tmp[0]
 
                 if point_end == (-1, -1):
@@ -182,14 +173,11 @@ class drawingBoardUIBusi(QMainWindow, Ui_drawingBoard):
                     continue
 
                 if pos_tmp[1] == 2:
-                    logger.debug('pos_tmp[1]%s', pos_tmp[1])
                     self.pen.setColor(Qt.red)
                 elif pos_tmp[1] == 1:
                     self.pen.setColor(Qt.blue)
-                    logger.debug('pos_tmp[1]%s', pos_tmp[1])
 
                 elif pos_tmp[1] == 0:
-                    logger.debug('pos_tmp[1]%s-->black', pos_tmp[1])
                     self.pen.setColor(Qt.black)
 
                 # 绘制在窗体和pixmap上
@@ -211,17 +199,12 @@ class drawingBoardUIBusi(QMainWindow, Ui_drawingBoard):
             每次update()时，之前调用的paintEvent()留下的痕迹都会清空
         '''
         # 中间变量pos_tmp提取当前点
-        logger.debug('将当前坐标添加到轨迹里表中')
 
         if event.buttons() == Qt.LeftButton:
             pos_tmp = (event.pos().x(), event.pos().y())
-            logger.debug('pos_tmp %s',pos_tmp)
+            logger.debug('pos_tmp %s', pos_tmp)
             self.pos_xy.append((pos_tmp, self.penColor))
-
-            logger.info('更新绘制成功, 轨迹%s', self.pos_xy[0])
-
             self.update()
-
 
     def mouseReleaseEvent(self, event):
         '''
@@ -235,12 +218,12 @@ class drawingBoardUIBusi(QMainWindow, Ui_drawingBoard):
 
         self.update()
 
-    def keyPressEvent(self, event):
-        '''键盘事件--快捷键'''
-
-        # ESC退出白板
-        if event.key() == Qt.Key_Escape:
-            self.showMinimized()
+        # def keyPressEvent(self, event):
+        #     '''键盘事件--快捷键'''
+        #
+        #     # ESC退出白板
+        #     if event.key() == Qt.Key_Escape:
+        #         self.showMinimized()
 
         # if event.key() == Qt.Key_F1:
         #     self.clearScree()
@@ -279,33 +262,34 @@ class drawingBoardUIBusi(QMainWindow, Ui_drawingBoard):
 
         qmenu = QMenu(self)
 
-        F1 = qmenu.addAction('&清屏(F1)', self.clearScree)
-        F1.setShortcut('Ctrl+Q')
-        savePictureAct = qmenu.addAction('保存(F2)', self.savePicture)
-        savePictureAct.setShortcut('F1')
-        switchAct = qmenu.addAction('切换(F3)', self.switch)
+        cleanScree = qmenu.addAction('清屏', self.clearScree)
+
+        savePictureAct = qmenu.addAction('保存')
+        savePictureAct.triggered.connect(lambda: self.savePicture(False))
+        switchAct = qmenu.addAction('切换', self.switch)
 
         qmenu.addSeparator()
-        previousPageAct = qmenu.addAction('上一页(F4)', self.previousPage)
-        nextPageAct = qmenu.addAction('下一页(F5)', self.nextPage)
+        previousPageAct = qmenu.addAction('上一页', self.previousPage)
+        nextPageAct = qmenu.addAction('下一页', self.nextPage)
         qmenu.addSeparator()
 
-        self.changeColorRed = qmenu.addAction('红笔(F6)', self.changeColor)
-        self.changeColorRed.setShortcut('F6')
-        self.changeColorBlue = qmenu.addAction('蓝笔(F7)', self.changeColor)
-        self.changeColorBlack = qmenu.addAction('黑笔(F8)', self.changeColor)
+        self.changeColorBlack = qmenu.addAction('黑笔')
+        self.changeColorBlack.triggered.connect(lambda: self.changeColor(0))
+        self.changeColorBlue = qmenu.addAction('蓝笔')
+        self.changeColorBlue.triggered.connect(lambda: self.changeColor(1))
+        self.changeColorRed = qmenu.addAction('红笔')
+        self.changeColorRed.triggered.connect(lambda: self.changeColor(2))
+
         qmenu.addSeparator()
 
         # self.changeThickness = qmenu.addAction('笔的粗细', self.changeThickness())
         # qmenu.addSeparator()
 
-        qmenu.addAction('功能(F9)', self.startSharing)
-        qmenu.addAction('恢复(F10)', self.restorePicture)
-        qmenu.addAction('加载(F11)', self.loadPicture)
+        qmenu.addAction('功能', self.startSharing)
+        qmenu.addAction('恢复', self.restorePicture)
+        qmenu.addAction('加载', self.loadPicture)
 
         self.action = qmenu.exec_(self.mapToGlobal(event.pos()))
-
-
 
     def loadPicture(self):
         '''加载本地图片'''
@@ -319,21 +303,13 @@ class drawingBoardUIBusi(QMainWindow, Ui_drawingBoard):
     def changeThickness(self):
         pass
 
-
-    def changeColor(self):
+    def changeColor(self, colorNum):
         '''换颜色'''
 
-        sender = self.sender()
-        if sender == self.changeColorRed:
-            self.pen.setColor(Qt.red)
-            self.penColor = 2
-        elif sender == self.changeColorBlue:
-            self.pen.setColor(Qt.blue)
-            self.penColor = 1
-        else:
-            self.pen.setColor(Qt.black)
-            self.penColor = 0
+        colorDic = {0: Qt.black, 1: Qt.blue, 2: Qt.red}
 
+        self.pen.setColor(colorDic[colorNum])
+        self.penColor = colorNum
 
     def nextPage(self):
         pass
@@ -345,11 +321,43 @@ class drawingBoardUIBusi(QMainWindow, Ui_drawingBoard):
         '''切换'''
         self.showMinimized()
 
-    def savePicture(self):
-        '''将当前白板上的内容保存成图片'''
+    def savePicture(self, flag=True, meetingID='201711'):
+        '''
+            将当前白板上的内容保存成图片
+            flag = True,为自动保存
+            flag = False为用户保存
+        '''
+        # 保存目录 './save/日期+会议号/'
+        time = QDateTime.currentDateTime().toString("yyyy-MM-dd_")
+        meetingID = meetingID
+        filePath = os.path.join(os.getcwd(), 'save', time + meetingID)
+        # 创建目录
+        if not os.path.exists(filePath):
+            os.makedirs(filePath)
+            os.makedirs(os.path.join(filePath, 'temp'))
 
-        fileName = QFileDialog.getSaveFileName(self, '保存图片', '.\save', "*.png;;*.xpm;;.jpg")
-        self.pixMap.save(fileName[0])
+        if not flag:
+            # 自动保存分为两部分：1.保存图片到本地 2.保存保存路径json文件到本地
+            fileName = QDateTime.currentDateTime().toString('yyMMddhhmmss')
+            logger.debug('fileName %s', fileName)
+            self.pixMap.save(os.path.join(filePath, 'temp', fileName + '.png'))
+            logger.debug('保存图片')
+
+            import json
+            self.pageNum = 1
+            dict = {'pox_xy': self.pos_xy,
+                    'page': self.pageNum,
+                    'meetingID': meetingID
+                    }
+            logger.debug('dict: %s', dict)
+
+            with open(os.path.join(filePath, 'temp', fileName + '.json'), 'w') as f:
+                json.dump(dict, f)
+            logger.debug('保存json文件')
+
+        else:
+            fileName = QFileDialog.getSaveFileName(self, '保存图片', filePath, ".png;;.jpg")
+            self.pixMap.save(fileName[0] + fileName[1])
 
     def clearScree(self):
         '''清屏'''
@@ -361,7 +369,7 @@ class drawingBoardUIBusi(QMainWindow, Ui_drawingBoard):
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-    dbb = drawingBoardUIBusi()
+    dbb = DrawingBoardUIBusi()
     dbb.setupBusi()
     dbb.show()
     sys.exit(app.exec_())

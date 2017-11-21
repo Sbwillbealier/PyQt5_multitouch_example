@@ -21,6 +21,13 @@ logger.addHandler(ch)
 class DrawingBoardUIBusi(QMainWindow, Ui_drawingBoard):
     def __init__(self):
         super(DrawingBoardUIBusi, self).__init__()
+        self.setupBusi()
+
+    def setupBusi(self):
+        '''
+        实现业务（信号和槽的连接）
+        '''
+        self.setupUi(self)
 
         # 记录笔迹（坐标，颜色）
         self.pos_xy = []  # [((x, y), c)]  c->0 1 2
@@ -35,21 +42,17 @@ class DrawingBoardUIBusi(QMainWindow, Ui_drawingBoard):
         self.paintToWindow = QPainter(self)
         self.paintToWindow.setRenderHint(QPainter.SmoothPixmapTransform, True)
 
-        # QPixMap
-        cp = QDesktopWidget().availableGeometry()
-        self.pixMap = QPixmap(cp.size())
-        self.pixMap.fill(Qt.white)
-        self.paintToPix = QPainter(self.pixMap)
-        self.paintToPix.setRenderHint(QPainter.SmoothPixmapTransform, True)
-
-    def setupBusi(self):
-        '''
-        实现业务（信号和槽的连接）
-        '''
-
         # 获取显示器的分辨率
         cp = QDesktopWidget().availableGeometry()
         # print(QDesktopWidget().availableGeometry()) -->(0, 0, 1366, 728)
+
+        # 画布QPixMap
+        self.pixMap = QPixmap(cp.size())
+        self.pixMap.fill(Qt.white)
+
+        # 绘制在画布上的painter
+        self.paintToPix = QPainter(self.pixMap)
+        self.paintToPix.setRenderHint(QPainter.SmoothPixmapTransform, True)
 
         # 获得显示器的物理尺寸
         desk = QDesktopWidget()
@@ -129,8 +132,6 @@ class DrawingBoardUIBusi(QMainWindow, Ui_drawingBoard):
         self.btn_loadPicture.move(positions[10][0], positions[10][1])
         self.btn_loadPicture.clicked.connect(self.loadPicture)
 
-        self.setupUi(self)
-
     def paintEvent(self, event):
         '''绘图事件'''
 
@@ -202,7 +203,7 @@ class DrawingBoardUIBusi(QMainWindow, Ui_drawingBoard):
 
         if event.buttons() == Qt.LeftButton:
             pos_tmp = (event.pos().x(), event.pos().y())
-            logger.debug('pos_tmp %s', pos_tmp)
+            # logger.debug('pos_tmp %s', pos_tmp)
             self.pos_xy.append((pos_tmp, self.penColor))
             self.update()
 
@@ -370,6 +371,6 @@ class DrawingBoardUIBusi(QMainWindow, Ui_drawingBoard):
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     dbb = DrawingBoardUIBusi()
-    dbb.setupBusi()
+    # dbb.setupBusi()
     dbb.show()
     sys.exit(app.exec_())

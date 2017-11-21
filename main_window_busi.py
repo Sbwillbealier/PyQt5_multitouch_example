@@ -33,7 +33,7 @@ class MainWindowBusi(QMainWindow, Ui_mainWindow):
         # self.setWindowFlags(Qt.SubWindow)
         # 获得白板对象
         self.dbb = DrawingBoardUIBusi()
-        self.dbb.setupBusi()
+        #self.dbb.setupBusi()
 
         # 设置样式
         self.setStyle()

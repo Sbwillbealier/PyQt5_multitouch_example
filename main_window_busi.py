@@ -116,9 +116,11 @@ class MainWindowBusi(QMainWindow, Ui_mainWindow):
         fileName = QFileDialog.getOpenFileName(self, '打开PPT',
                                                '.',
                                                "*.ppt;*.pptx;*.pptm;*.ppsx;*.pps;*.potx;*.pot;*.potm;*.odp;All File(*)")
-        if fileName[0]:
+        if fileName[0] and fileName[0].endswith(('ppt', 'pptx')):
             import os
             os.system('start ' + fileName[0])
+        else:
+            QMessageBox.information(self, '提示', '不是幻灯片文件，请重新选择！', QMessageBox.Yes)
 
     def showQR(self):
         '''显示会议二维码或编号'''

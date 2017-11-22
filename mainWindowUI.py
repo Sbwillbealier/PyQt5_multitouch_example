@@ -57,7 +57,7 @@ class Ui_mainWindow(object):
 
     def retranslateUi(self, mainWindow):
         _translate = QtCore.QCoreApplication.translate
-        mainWindow.setWindowTitle(_translate("mainWindow", "MainWindow"))
+        mainWindow.setWindowTitle(_translate("mainWindow", "白板"))
         self.pushButton_share.setText(_translate("mainWindow", "分享"))
         self.pushButton_exit.setText(_translate("mainWindow", "退出"))
 

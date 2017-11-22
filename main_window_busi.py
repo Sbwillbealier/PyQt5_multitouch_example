@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
-
+from PyQt5.QtGui import QIcon
 from mainWindowUI import Ui_mainWindow
 from drawing_board_busi import DrawingBoardUIBusi
 from PyQt5.QtWidgets import (QApplication, QMainWindow, QMenu, qApp, QDesktopWidget,
-                             QMessageBox, QFileDialog)
+                             QMessageBox, QFileDialog, QAction, QSystemTrayIcon)
 from PyQt5.QtCore import Qt, QEvent, QFile, QIODevice, QTextStream
 
 import sys
@@ -14,6 +14,9 @@ class MainWindowBusi(QMainWindow, Ui_mainWindow):
 
         super(MainWindowBusi, self).__init__()
         self.setupUi(self)
+
+        self.icon = QIcon("qrc\Icon.png")
+        self.setWindowIcon(self.icon)
 
         # 设置控制窗体的位置
         cp = QDesktopWidget().availableGeometry()
@@ -30,19 +33,41 @@ class MainWindowBusi(QMainWindow, Ui_mainWindow):
         # self.setWindowFlags(Qt.CustomizeWindowHint | Qt.WindowTitleHint )
         # self.setWindowFlags(Qt.CustomizeWindowHint | Qt.WindowSystemMenuHint | Qt.WindowStaysOnTopHint)
         self.setWindowFlags(Qt.CustomizeWindowHint | Qt.WindowSystemMenuHint)
-        # self.setWindowFlags(Qt.SubWindow)
+
         # 获得白板对象
         self.dbb = DrawingBoardUIBusi()
-        #self.dbb.setupBusi()
 
         # 设置样式
         self.setStyle()
 
         # 窗体收起
-        # self.
 
         # 允许拖拽PPT文件到程序上
         self.setAcceptDrops(True)
+
+        # 设置系统托盘
+        self.addSystemTray()  # 设置系统托盘
+
+    def addSystemTray(self):
+        '''
+        系统托盘，显示、隐藏主窗体，退出程序
+        :return:
+        '''
+        minimizeAction = QAction("Mi&nimize", self, triggered=self.hide)
+        maximizeAction = QAction("Ma&ximize", self, triggered=self.showMaximized)
+        restoreAction = QAction("&Restore", self, triggered=self.showNormal)
+        quitAction = QAction("&Quit", self, triggered=self.close)
+        self.trayIconMenu = QMenu(self)
+        self.trayIconMenu.addAction(minimizeAction)
+        self.trayIconMenu.addAction(maximizeAction)
+        self.trayIconMenu.addAction(restoreAction)
+        self.trayIconMenu.addSeparator()
+        self.trayIconMenu.addAction(quitAction)
+        self.trayIcon = QSystemTrayIcon(self)
+        self.trayIcon.setIcon(self.icon)
+        self.setWindowIcon(self.icon)
+        self.trayIcon.setContextMenu(self.trayIconMenu)
+        self.trayIcon.show()
 
     def mouseDoubleClickEvent(self, e):
         '''双击打开白板'''

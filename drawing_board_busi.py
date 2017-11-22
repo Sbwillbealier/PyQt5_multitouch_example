@@ -8,7 +8,6 @@ from PyQt5.QtGui import QPainter, QPen, QPixmap
 from PyQt5.QtCore import Qt, QDateTime
 from PyQt5.QtWidgets import (QMainWindow, QApplication, QDesktopWidget,
                              QPushButton, QMenu, QFileDialog)
-from drawingBoardUI import Ui_drawingBoard
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -18,49 +17,26 @@ ch.setFormatter(formatter)
 logger.addHandler(ch)
 
 
-class DrawingBoardUIBusi(QMainWindow, Ui_drawingBoard):
+class DrawingBoardUIBusi(QMainWindow):
     def __init__(self):
         super(DrawingBoardUIBusi, self).__init__()
+
+        self.resolution = QDesktopWidget().availableGeometry()  # 获取显示器的分辨率-->(0, 0, 1366, 728)
+        self.monitor = QDesktopWidget()  # 获得显示器的物理尺寸
+
+        self.setupUi()
         self.setupBusi()
 
-    def setupBusi(self):
-        '''
-        实现业务（信号和槽的连接）
-        '''
-        self.setupUi(self)
+    def setupUi(self):
 
-        # 记录笔迹（坐标，颜色）
-        self.pos_xy = []  # [((x, y), c)]  c->0 1 2
-        self.penColor = 0  # 笔的初始颜色黑色
-
-        self.setMouseTracking(False)
-
-        # 使用指定的画笔，宽度，钢笔样式，帽子样式和连接样式构造笔
-        self.pen = QPen(Qt.black, 4, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin)
-
-        # 绘制在窗体上的painter
-        self.paintToWindow = QPainter(self)
-        self.paintToWindow.setRenderHint(QPainter.SmoothPixmapTransform, True)
-
-        # 获取显示器的分辨率
-        cp = QDesktopWidget().availableGeometry()
-        # print(QDesktopWidget().availableGeometry()) -->(0, 0, 1366, 728)
-
-        # 画布QPixMap
-        self.pixMap = QPixmap(cp.size())
-        self.pixMap.fill(Qt.white)
-
-        # 绘制在画布上的painter
-        self.paintToPix = QPainter(self.pixMap)
-        self.paintToPix.setRenderHint(QPainter.SmoothPixmapTransform, True)
-
-        # 获得显示器的物理尺寸
-        desk = QDesktopWidget()
+        self.setWindowTitle('白板')
+        # self.setWindowFlags(Qt.Tool | Qt.X11BypassWindowManagerHint)  # 任务栏隐藏图标
 
         # 创建白板的功能键
-        names = ['清屏', '保存', '切换', '上一页', '下一页', '红笔', '蓝笔', '黑笔', '功能', '恢复', '加载']
-        positions = [(0.9 * cp.width(), (y * cp.height() / 11) / cp.height() * desk.height()) for y in range(0, 11)]
-        height = (cp.height() / 11) / cp.height() * desk.height()
+        names = ['清屏', '保存', '切换', '上一页', '下一页', '黑笔', '蓝笔', '红笔', '功能', '恢复', '加载']
+        positions = [(self.resolution.width() - self.resolution.height() / 11,
+                      (y * self.resolution.height() / 11)) for y in range(0, 11)]
+        height = (self.resolution.height() / 11) / self.resolution.height() * self.monitor.height()
 
         # for position, name in zip(positions, names):
         #     button = QPushButton(name, self)
@@ -101,20 +77,20 @@ class DrawingBoardUIBusi(QMainWindow, Ui_drawingBoard):
         self.btn_changeColor1 = QPushButton(names[5], self)
         self.btn_changeColor1.resize(height * 0.9, height * 0.9)
         self.btn_changeColor1.move(positions[5][0], positions[5][1])
-        self.btn_changeColor1.clicked.connect(self.changeColor)
+        self.btn_changeColor1.clicked.connect(lambda: self.changeColor(0))
         self.btn_changeColor1.setEnabled(True)
         self.btn_changeColor1.setCheckable(True)
 
         self.btn_changeColor2 = QPushButton(names[6], self)
         self.btn_changeColor2.resize(height * 0.9, height * 0.9)
         self.btn_changeColor2.move(positions[6][0], positions[6][1])
-        self.btn_changeColor2.clicked.connect(self.changeColor)
+        self.btn_changeColor2.clicked.connect(lambda: self.changeColor(1))
         self.btn_changeColor2.setEnabled(True)
 
         self.btn_changeColor3 = QPushButton(names[7], self)
         self.btn_changeColor3.resize(height * 0.9, height * 0.9)
         self.btn_changeColor3.move(positions[7][0], positions[7][1])
-        self.btn_changeColor3.clicked.connect(self.changeColor)
+        self.btn_changeColor3.clicked.connect(lambda: self.changeColor(2))
         self.btn_changeColor3.setEnabled(True)
 
         self.btn_startSharing = QPushButton(names[8], self)
@@ -131,6 +107,32 @@ class DrawingBoardUIBusi(QMainWindow, Ui_drawingBoard):
         self.btn_loadPicture.resize(height * 0.9, height * 0.9)
         self.btn_loadPicture.move(positions[10][0], positions[10][1])
         self.btn_loadPicture.clicked.connect(self.loadPicture)
+
+    def setupBusi(self):
+        '''
+        实现业务（信号和槽的连接）
+        '''
+
+        # 记录笔迹（坐标，颜色）
+        self.pos_xy = []  # [((x, y), c)]  c->0 1 2
+        self.penColor = 0  # 笔的初始颜色黑色
+
+        self.setMouseTracking(False)
+
+        # 使用指定的画笔，宽度，钢笔样式，帽子样式和连接样式构造笔
+        self.pen = QPen(Qt.black, 4, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin)
+
+        # 绘制在窗体上的painter
+        self.paintToWindow = QPainter(self)
+        self.paintToWindow.setRenderHint(QPainter.SmoothPixmapTransform, True)
+
+        # 画布QPixMap
+        self.pixMap = QPixmap(self.resolution.size())
+        self.pixMap.fill(Qt.white)
+
+        # 绘制在画布上的painter
+        self.paintToPix = QPainter(self.pixMap)
+        self.paintToPix.setRenderHint(QPainter.SmoothPixmapTransform, True)
 
     def paintEvent(self, event):
         '''绘图事件'''
@@ -372,5 +374,5 @@ if __name__ == '__main__':
     app = QApplication(sys.argv)
     dbb = DrawingBoardUIBusi()
     # dbb.setupBusi()
-    dbb.show()
+    dbb.showMaximized()
     sys.exit(app.exec_())

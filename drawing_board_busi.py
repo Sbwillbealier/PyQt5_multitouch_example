@@ -4,7 +4,7 @@ import sys
 import logging
 import os
 
-from PyQt5.QtGui import QPainter, QPen, QPixmap
+from PyQt5.QtGui import QPainter, QPen, QPixmap, QIcon
 from PyQt5.QtCore import Qt, QDateTime
 from PyQt5.QtWidgets import (QMainWindow, QApplication, QDesktopWidget,
                              QPushButton, QMenu, QFileDialog)
@@ -23,19 +23,25 @@ class DrawingBoardUIBusi(QMainWindow):
 
         self.resolution = QDesktopWidget().availableGeometry()  # 获取显示器的分辨率-->(0, 0, 1366, 728)
         self.monitor = QDesktopWidget()  # 获得显示器的物理尺寸
-
-        self.setupUi()
+        # self.setWindowFlags(Qt.Tool | Qt.X11BypassWindowManagerHint)  # 任务栏隐藏图标
         self.setupBusi()
+        self.setupUi()
 
     def setupUi(self):
 
-        self.setWindowTitle('白板')
+        self.setWindowTitle('白板')  # 设置标题
+        self.setWindowIcon(QIcon("qrc\Icon.png"))  # 设置图标
         # self.setWindowFlags(Qt.Tool | Qt.X11BypassWindowManagerHint)  # 任务栏隐藏图标
+        self.setWindowTitle('当前' + str(self.page) + '页')
 
         # 创建白板的功能键
         names = ['清屏', '保存', '切换', '上一页', '下一页', '黑笔', '蓝笔', '红笔', '功能', '恢复', '加载']
+
+        # 各个按钮的位置
         positions = [(self.resolution.width() - self.resolution.height() / 11,
                       (y * self.resolution.height() / 11)) for y in range(0, 11)]
+
+        # 每个功能按钮的高度
         height = (self.resolution.height() / 11) / self.resolution.height() * self.monitor.height()
 
         # for position, name in zip(positions, names):
@@ -45,7 +51,6 @@ class DrawingBoardUIBusi(QMainWindow):
         #     button.setEnabled(True)
         #     # button.hide()
 
-        # self.pushButton.clicked.connect(self.close)
 
         '''要重构这部分代码'''
 
@@ -57,7 +62,7 @@ class DrawingBoardUIBusi(QMainWindow):
         self.btn_savePicture = QPushButton(names[1], self)
         self.btn_savePicture.resize(height * 0.9, height * 0.9)
         self.btn_savePicture.move(positions[1][0], positions[1][1])
-        self.btn_savePicture.clicked.connect(self.savePicture)
+        self.btn_savePicture.clicked.connect(lambda: self.savePicture(False))
 
         self.btn_switch = QPushButton(names[2], self)
         self.btn_switch.resize(height * 0.9, height * 0.9)
@@ -113,10 +118,16 @@ class DrawingBoardUIBusi(QMainWindow):
         实现业务（信号和槽的连接）
         '''
 
-        # 记录笔迹（坐标，颜色）
-        self.pos_xy = []  # [((x, y), c)]  c->0 1 2
-        self.penColor = 0  # 笔的初始颜色黑色
+        # 页数记录
+        self.page = 1  # 当前所在页页码
+        self.pages = 1  # 总页数
 
+        # 记录笔迹（坐标，颜色）
+        self.penColor = 0  # 笔的初始颜色黑色
+        self.pos_xyc = []  # [((x, y), c)]  c->0 1 2
+        self.pos_pages = {}  # 存放所有页笔画路径{page : pos_xyc}
+
+        # 设置不追踪鼠标
         self.setMouseTracking(False)
 
         # 使用指定的画笔，宽度，钢笔样式，帽子样式和连接样式构造笔
@@ -161,10 +172,10 @@ class DrawingBoardUIBusi(QMainWindow):
             这样，不断地将相邻两个点之间画线，就能留下鼠标移动轨迹了
         '''
 
-        if len(self.pos_xy) > 1:
-            point_start = self.pos_xy[0][0]
+        if len(self.pos_xyc) > 1:
+            point_start = self.pos_xyc[0][0]
 
-            for pos_tmp in self.pos_xy:
+            for pos_tmp in self.pos_xyc:
 
                 point_end = pos_tmp[0]
 
@@ -202,63 +213,29 @@ class DrawingBoardUIBusi(QMainWindow):
             每次update()时，之前调用的paintEvent()留下的痕迹都会清空
         '''
         # 中间变量pos_tmp提取当前点
-
         if event.buttons() == Qt.LeftButton:
             pos_tmp = (event.pos().x(), event.pos().y())
-            # logger.debug('pos_tmp %s', pos_tmp)
-            self.pos_xy.append((pos_tmp, self.penColor))
+            self.pos_xyc.append((pos_tmp, self.penColor))
             self.update()
 
     def mouseReleaseEvent(self, event):
         '''
             重写鼠标按住后松开的事件
-            在每次松开后向pos_xy列表中添加一个断点(-1, -1)
+            在每次松开后向pos_xyc列表中添加一个断点(-1, -1)
             然后在绘画时判断一下是不是断点就行了
             是断点的话就跳过去，不与之前的连续
         '''
         pos_test = (-1, -1)
-        self.pos_xy.append((pos_test, -1))
+        self.pos_xyc.append((pos_test, -1))
 
         self.update()
 
-        # def keyPressEvent(self, event):
-        #     '''键盘事件--快捷键'''
-        #
-        #     # ESC退出白板
-        #     if event.key() == Qt.Key_Escape:
-        #         self.showMinimized()
+    def keyPressEvent(self, event):
+        '''键盘事件--快捷键'''
 
-        # if event.key() == Qt.Key_F1:
-        #     self.clearScree()
-        #
-        # if event.key() == Qt.Key_F2:
-        #     pass
-        #
-        # if event.key() == Qt.Key_F3:
-        #     pass
-        # if event.key() == Qt.Key_F4:
-        #     pass
-        #
-        # if event.key() == Qt.Key_F5:
-        #     pass
-        #
-        # if event.key() == Qt.Key_F6:
-        #     pass
-        #
-        # if event.key() == Qt.Key_F7:
-        #     pass
-        #
-        # if event.key() == Qt.Key_F8:
-        #     pass
-        #
-        # if event.key() == Qt.Key_F9:
-        #     pass
-        #
-        # if event.key() == Qt.Key_F10:
-        #     pass
-        #
-        # if event.key() == Qt.Key_F11:
-        #     pass
+        # ESC退出白板
+        if event.key() == Qt.Key_Escape:
+            self.showMinimized()
 
     def contextMenuEvent(self, event):
         '''在绘图中的右键菜单'''
@@ -315,10 +292,56 @@ class DrawingBoardUIBusi(QMainWindow):
         self.penColor = colorNum
 
     def nextPage(self):
-        pass
+        '''
+        切换下一页画布
+        :return:
+        '''
+
+        if self.page == self.pages:
+
+            # 当前页为最后一页，保存当前页的内容
+            self.savePicture(True)  # 保存当前页内容
+            self.pos_pages[self.page] = self.pos_xyc  # 记录当前页笔画路径
+
+            # 开辟新一页
+            self.pos_xyc = []  # 当前页路径清空
+            self.pages += 1  # 页码加一
+
+        else:
+
+            # 当前页并非最后一页，直接读取下一页路径
+            self.pos_xyc = self.pos_pages[self.page + 1]
+
+        self.pixMap.fill(Qt.white)  # 清空画布
+        self.update()   # 更新内容
+        self.page = self.page + 1  # 当前页码加一
+        self.setWindowTitle('当前' + str(self.page) + '/' + str(self.pages) + '页')  # 更新标题栏显示的页码
 
     def previousPage(self):
-        pass
+        '''
+        切换到上一页画布
+        :return:
+        '''
+        logger.debug('切换上一页self.page>1 %s', self.page > 1)
+
+        if self.page == self.pages:
+
+            # 当前页为最后一页，记录最后一页内容
+            self.pos_pages[self.page] = self.pos_xyc
+            self.savePicture(True)
+
+        if self.page > 1:
+            # 当前页码非第一页
+            self.page -= 1
+            self.pos_xyc = self.pos_pages[self.page]
+
+        else:
+            # 当前页码为第一页
+            pass
+
+        self.pixMap.fill(Qt.white)  # 清空画布
+        self.update()  # 更新内容
+        self.setWindowTitle('当前' + str(self.page) + '/' + str(self.pages) + '页')  # 更新标题栏显示的页码
 
     def switch(self):
         '''切换'''
@@ -339,7 +362,8 @@ class DrawingBoardUIBusi(QMainWindow):
             os.makedirs(filePath)
             os.makedirs(os.path.join(filePath, 'temp'))
 
-        if not flag:
+        if flag:
+
             # 自动保存分为两部分：1.保存图片到本地 2.保存保存路径json文件到本地
             fileName = QDateTime.currentDateTime().toString('yyMMddhhmmss')
             logger.debug('fileName %s', fileName)
@@ -347,25 +371,26 @@ class DrawingBoardUIBusi(QMainWindow):
             logger.debug('保存图片')
 
             import json
-            self.pageNum = 1
-            dict = {'pox_xy': self.pos_xy,
-                    'page': self.pageNum,
+            dict = {'pox_xyc': self.pos_xyc,
+                    'page': self.page,
                     'meetingID': meetingID
                     }
-            logger.debug('dict: %s', dict)
+            # logger.debug('dict: %s', dict)
 
             with open(os.path.join(filePath, 'temp', fileName + '.json'), 'w') as f:
                 json.dump(dict, f)
             logger.debug('保存json文件')
 
         else:
+
+            # 用户手动保存
             fileName = QFileDialog.getSaveFileName(self, '保存图片', filePath, ".png;;.jpg")
             self.pixMap.save(fileName[0] + fileName[1])
 
     def clearScree(self):
         '''清屏'''
 
-        self.pos_xy.clear()
+        self.pos_xyc.clear()
         self.update()
         self.pixMap.fill(Qt.white)
 
@@ -374,5 +399,6 @@ if __name__ == '__main__':
     app = QApplication(sys.argv)
     dbb = DrawingBoardUIBusi()
     # dbb.setupBusi()
+    # dbb.setWindowFlags(Qt.Tool | Qt.X11BypassWindowManagerHint)
     dbb.showMaximized()
     sys.exit(app.exec_())

@@ -15,7 +15,7 @@ class MainWindowBusi(QMainWindow, Ui_mainWindow):
         super(MainWindowBusi, self).__init__()
         self.setupUi(self)
 
-        self.icon = QIcon("qrc\Icon.png")
+        self.icon = QIcon("qrc\Icon.png")       # 窗体图标
         self.setWindowIcon(self.icon)
 
         # 设置控制窗体的位置
@@ -53,27 +53,40 @@ class MainWindowBusi(QMainWindow, Ui_mainWindow):
         系统托盘，显示、隐藏主窗体，退出程序
         :return:
         '''
-        minimizeAction = QAction("Mi&nimize", self, triggered=self.hide)
-        maximizeAction = QAction("Ma&ximize", self, triggered=self.showMaximized)
-        restoreAction = QAction("&Restore", self, triggered=self.showNormal)
-        quitAction = QAction("&Quit", self, triggered=self.close)
+        minimizeAction = QAction("隐藏", self, triggered=self.hide)       # 隐藏菜单
+        maximizeAction = QAction("显示", self, triggered=self.show)       # 显示菜单
+        restoreAction = QAction("恢复", self, triggered=self.showNormal)  # 恢复菜单
+        quitAction = QAction("退出", self, triggered=self.close)          # 退出菜单
         self.trayIconMenu = QMenu(self)
         self.trayIconMenu.addAction(minimizeAction)
         self.trayIconMenu.addAction(maximizeAction)
         self.trayIconMenu.addAction(restoreAction)
         self.trayIconMenu.addSeparator()
         self.trayIconMenu.addAction(quitAction)
+
         self.trayIcon = QSystemTrayIcon(self)
         self.trayIcon.setIcon(self.icon)
         self.setWindowIcon(self.icon)
-        self.trayIcon.setContextMenu(self.trayIconMenu)
+        self.trayIcon.setContextMenu(self.trayIconMenu)                   # 添加右键菜单
+        self.trayIcon.activated.connect(self.trayClick)                   # 左键点击托盘
+
         self.trayIcon.show()
+
+    def trayClick(self, event):
+        '''
+        双击系统托盘显示主窗体
+        :param event:
+        :return:
+        '''
+        if event == QSystemTrayIcon.DoubleClick:  # 双击
+            self.showNormal()
+        else:
+            pass
 
     def mouseDoubleClickEvent(self, e):
         '''双击打开白板'''
 
         self.dbb.showMaximized()
-        # self.drawingboard.FramelessWindowhint()
 
     def mousePressEvent(self, event):
         '''鼠标点击事件--实现无边框窗体移动'''
@@ -133,7 +146,7 @@ class MainWindowBusi(QMainWindow, Ui_mainWindow):
     def showHide(self):
         '''显示或隐藏POT'''
 
-        self.showMinimized()
+        self.hide()
 
     def openPPT(self):
         '''打开PPT'''

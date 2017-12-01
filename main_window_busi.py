@@ -7,6 +7,8 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QMenu, qApp, QDesktopWid
 from PyQt5.QtCore import Qt, QEvent, QFile, QIODevice, QTextStream
 
 import sys
+from pykeyboard import PyKeyboard
+import time
 
 
 class MainWindowBusi(QMainWindow, Ui_mainWindow):
@@ -15,7 +17,7 @@ class MainWindowBusi(QMainWindow, Ui_mainWindow):
         super(MainWindowBusi, self).__init__()
         self.setupUi(self)
 
-        self.icon = QIcon("qrc\Icon.png")       # 窗体图标
+        self.icon = QIcon("qrc\Icon.png")  # 窗体图标
         self.setWindowIcon(self.icon)
 
         # 设置控制窗体的位置
@@ -53,10 +55,10 @@ class MainWindowBusi(QMainWindow, Ui_mainWindow):
         系统托盘，显示、隐藏主窗体，退出程序
         :return:
         '''
-        minimizeAction = QAction("隐藏", self, triggered=self.hide)       # 隐藏菜单
-        maximizeAction = QAction("显示", self, triggered=self.show)       # 显示菜单
+        minimizeAction = QAction("隐藏", self, triggered=self.hide)  # 隐藏菜单
+        maximizeAction = QAction("显示", self, triggered=self.show)  # 显示菜单
         restoreAction = QAction("恢复", self, triggered=self.showNormal)  # 恢复菜单
-        quitAction = QAction("退出", self, triggered=self.close)          # 退出菜单
+        quitAction = QAction("退出", self, triggered=self.close)  # 退出菜单
         self.trayIconMenu = QMenu(self)
         self.trayIconMenu.addAction(minimizeAction)
         self.trayIconMenu.addAction(maximizeAction)
@@ -67,8 +69,8 @@ class MainWindowBusi(QMainWindow, Ui_mainWindow):
         self.trayIcon = QSystemTrayIcon(self)
         self.trayIcon.setIcon(self.icon)
         self.setWindowIcon(self.icon)
-        self.trayIcon.setContextMenu(self.trayIconMenu)                   # 添加右键菜单
-        self.trayIcon.activated.connect(self.trayClick)                   # 左键点击托盘
+        self.trayIcon.setContextMenu(self.trayIconMenu)  # 添加右键菜单
+        self.trayIcon.activated.connect(self.trayClick)  # 左键点击托盘
 
         self.trayIcon.show()
 
@@ -160,6 +162,12 @@ class MainWindowBusi(QMainWindow, Ui_mainWindow):
         else:
             QMessageBox.information(self, '提示', '不是幻灯片文件，请重新选择！', QMessageBox.Yes)
 
+        # 打开ppt
+        k = PyKeyboard()
+        time.sleep(4)
+        k.tap_key(k.function_keys[5])
+        time.sleep(3)
+
     def showQR(self):
         '''显示会议二维码或编号'''
         pass
@@ -179,7 +187,7 @@ class MainWindowBusi(QMainWindow, Ui_mainWindow):
     def setStyle(self):
         '''加载样式表'''
 
-        file = QFile('qrc\style1.qss')
+        file = QFile('qrc\style3.qss')
         file.open(QIODevice.ReadOnly)
         styleSheet = QTextStream(file).readAll()
         qApp.setStyleSheet(styleSheet)
@@ -201,6 +209,12 @@ class MainWindowBusi(QMainWindow, Ui_mainWindow):
         from os import system
         url = e.mimeData().urls()[0].url()[8:]
         system('start ' + url)
+
+        # 打开ppt
+        k = PyKeyboard()
+        time.sleep(4)
+        k.tap_key(k.function_keys[5])
+        time.sleep(3)
 
 
 if __name__ == '__main__':

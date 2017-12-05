@@ -4,7 +4,7 @@ import sys
 import logging
 import os
 
-from PyQt5.QtGui import QPainter, QPen, QPixmap, QIcon, QBrush
+from PyQt5.QtGui import QPainter, QPen, QPixmap, QIcon, QBrush, QPixmapCache
 from PyQt5.QtCore import Qt, QDateTime, QPoint
 from PyQt5.QtWidgets import (QMainWindow, QApplication, QDesktopWidget,
                              QPushButton, QMenu, QFileDialog)
@@ -31,12 +31,14 @@ class DrawingBoardUIBusi(QMainWindow):
         :return:
         '''
 
-        self.setObjectName('drawWindow')
+        self.setObjectName('drawWindow')    # 对象名
         self.setWindowTitle('白板')  # 设置标题
+        self.resize(self.resolution.width(), self.resolution.height())
         self.setWindowIcon(QIcon("qrc\Icon.png"))  # 设置图标
-        # self.setStyleSheet('background-color:white;')
-        # self.setWindowFlags(Qt.Tool | Qt.X11BypassWindowManagerHint)  # 任务栏隐藏图标
-        self.setWindowTitle('当前' + str(self.page) + '页')
+        self.setWindowFlags(Qt.Tool | Qt.X11BypassWindowManagerHint)  # 任务栏隐藏图标
+        self.setWindowTitle('当前' + str(self.page) + '页')    # 标题显示第几页
+        self.setWindowFlags(Qt.CustomizeWindowHint | Qt.WindowStaysOnTopHint | Qt.WindowTitleHint | Qt.WindowCloseButtonHint)
+        self.setFixedSize(self.width(), self.height())        # 设置主窗口禁止调整大小
 
         # 创建白板的功能键
         btn_names = ['清屏', '保存', '切换', '上一页', '下一页', '黑笔', '蓝笔', '红笔', '擦除', '功能', '恢复', '加载']
@@ -133,9 +135,14 @@ class DrawingBoardUIBusi(QMainWindow):
         self.resolution = QDesktopWidget().availableGeometry()  # 获取显示器的分辨率-->(0, 0, 1366, 728)
         self.monitor = QDesktopWidget()  # 获得显示器的物理尺寸
         # self.setWindowFlags(Qt.Tool | Qt.X11BypassWindowManagerHint)  # 任务栏隐藏图标
+
+        # 会议号
+        self.meetingID = 0 # 当前会议号
         # 页数记录
         self.page = 1  # 当前所在页页码
         self.pages = 1  # 总页数
+        self.isWritting = False # 是否正在输入
+        self.isWritten = False # 记录当前页是否有新写入
 
         # 记录笔迹（坐标，颜色）
         self.penColor = 0  # 笔的初始颜色黑色
@@ -157,8 +164,9 @@ class DrawingBoardUIBusi(QMainWindow):
         self.pix.fill(Qt.white)
 
         # 绘制在画布上的painter
-        self.paint_to_pix = QPainter(self.pix)
-        self.paint_to_pix.setRenderHint(QPainter.SmoothPixmapTransform, True)
+        # self.paint_to_pix = QPainter(self.pix)
+        # self.paint_to_pix.setRenderHint(QPainter.SmoothPixmapTransform, True)
+        # self.paint_to_pix.setPen(self.pen)
 
         # 黑板擦
         self.paintEase = QPainter(self)
@@ -176,76 +184,22 @@ class DrawingBoardUIBusi(QMainWindow):
     def paintEvent(self, event):
         '''绘图事件'''
 
-        # 绘制在窗口上
-        # self.paintToWindow.begin(self)
+        # logger.debug('开始抒写')
 
-        '''
-            首先判断pos_xy列表中是不是至少有两个点了
-            然后将pos_xy中第一个点赋值给point_start
-            利用中间变量pos_tmp遍历整个pos_xy列表
-                point_end = pos_tmp
+        if self.isWritting:
+            # 绘制在画布上
 
-                判断point_end是否是断点，如果是
-                    point_start赋值为断点
-                    continue
-                判断point_start是否是断点，如果是
-                    point_start赋值为point_end
-                    continue
+            paint_to_pix = QPainter(self.pix)
+            paint_to_pix.setRenderHint(QPainter.SmoothPixmapTransform, True)
+            paint_to_pix.setPen(self.pen)
 
-                画point_start到point_end之间的线
-                point_start = point_end
-            这样，不断地将相邻两个点之间画线，就能留下鼠标移动轨迹了
-        '''
-        #
-        # if len(self.pos_xyc) > 1:
-        #     point_start = self.pos_xyc[0][0]
-        #
-        #     for pos_tmp in self.pos_xyc:
-        #
-        #         point_end = pos_tmp[0]
-        #
-        #         if point_end == (-1, -1):
-        #             point_start = (-1, -1)
-        #             continue
-        #         if point_start == (-1, -1):
-        #             point_start = point_end
-        #             continue
-        #
-        #         if pos_tmp[1] == 3:
-        #             self.pen.setColor(Qt.white)
-        #             self.pen.setWidth(18)
-        #         else:
-        #             self.pen.setWidth(4)
-        #         if pos_tmp[1] == 2:
-        #             self.pen.setColor(Qt.red)
-        #         elif pos_tmp[1] == 1:
-        #             self.pen.setColor(Qt.blue)
-        #
-        #         elif pos_tmp[1] == 0:
-        #             self.pen.setColor(Qt.black)
-        #
-        #         # 绘制在窗体和pixmap上
-        #         self.paintToWindow.setPen(self.pen)
-        #         self.paintToPix.setPen(self.pen)
-        #
-        #         self.paintToWindow.drawLine(point_start[0], point_start[1], point_end[0], point_end[1])
-        #         self.paintToPix.drawLine(point_start[0], point_start[1], point_end[0], point_end[1])
-        #
-        #         point_start = point_end
-        #self.pos_temp = (0,0)
-        # self.paintToWindow.drawEllipse(self.pos_tmp[0]-10,self.pos_tmp[1]-10,40,40)
-        # self.paintToPix.end()
-        # self.paintToWindow.end()
-        # self.prepixmap.copy()
+            # 根据鼠标指针前后两个位置绘制直线
+            paint_to_pix.drawLine(self.lastPoint, self.endPoint)
 
-        # 绘制在画布上
-        self.paint_to_pix.setPen(self.pen)
-        # 根据鼠标指针前后两个位置绘制直线
-        self.paint_to_pix.drawLine(self.lastPoint, self.endPoint)
-        # 让前一个坐标值等于后一个坐标值，
-        # 这样就能实现画出连续的线
-        self.lastPoint = self.endPoint
+            # 让前一个坐标值等于后一个坐标值，
+            self.lastPoint = self.endPoint
 
+        # logger.debug('绘制在屏幕上')
         # 绘制在屏幕上
         painter_to_window = QPainter(self)
         painter_to_window.setPen(self.pen)
@@ -255,49 +209,33 @@ class DrawingBoardUIBusi(QMainWindow):
 
         # 鼠标左键按下
         if event.button() == Qt.LeftButton:
+            self.isWritten = True # 当前页有输入或改动
+            self.isWritting = True # 已开始抒写
             self.lastPoint = event.pos()
             self.endPoint = self.lastPoint
+            logger.debug('点击左键')
 
     def mouseMoveEvent(self, event):
         '''
-            按住鼠标移动事件：将当前点添加到pos_xy列表中
             调用update()函数在这里相当于调用paintEvent()函数
-            每次update()时，之前调用的paintEvent()留下的痕迹都会清空
         '''
-        # 中间变量pos_tmp提取当前点
-        # if event.buttons() == Qt.LeftButton:
-        #     self.pos_tmp = (event.pos().x(), event.pos().y())
-        #     self.pos_xyc.append((self.pos_tmp, self.penColor))
-        #
-        # if self.eraseable == True:
-        #     logger.debug('黑板擦start')
-        #     self.paintEase.begin(self)
-        #     self.paintEase.drawEllipse(event.pos().x(), event.pos().y(), 160, 160)
-        #     self.paintEase.end()
-        #     logger.debug('黑板擦end')
-        #
-        # self.update()
+
         if event.buttons() and Qt.LeftButton:
             self.endPoint = event.pos()
             # 进行重新绘制
             self.update()
+            logger.debug('鼠标移动')
 
     def mouseReleaseEvent(self, event):
-        '''
-            重写鼠标按住后松开的事件
-            在每次松开后向pos_xyc列表中添加一个断点(-1, -1)
-            然后在绘画时判断一下是不是断点就行了
-            是断点的话就跳过去，不与之前的连续
-        '''
-        # pos_test = (-1, -1)
-        # self.pos_xyc.append((pos_test, -1))
-        #
-        # self.update()
+
         # 鼠标左键释放
         if event.button() == Qt.LeftButton:
             self.endPoint = event.pos()
             # 进行重新绘制
             self.update()
+            self.isWritting = False # 已停止抒写
+            logger.debug('左键释放')
+
 
     def keyPressEvent(self, event):
         '''
@@ -308,7 +246,7 @@ class DrawingBoardUIBusi(QMainWindow):
 
         # ESC最小化白板
         if event.key() == Qt.Key_Escape:
-            self.showMinimized()
+            self.hide()
 
     def contextMenuEvent(self, event):
         '''
@@ -365,12 +303,12 @@ class DrawingBoardUIBusi(QMainWindow):
         if self.eraseable==False:
             self.eraseable = True
             self.pen.setColor(Qt.white) # 设置黑板擦的颜色为白色，与画板颜色一致
-            self.pen.setWidth(18) #设置黑板擦宽度
+            self.pen.setWidth(18) # 设置黑板擦宽度
+            # self.paint_to_pix.setPen(self.pen) # 更新paint_to_pix
             self.penColor = 3
         else:
             self.eraseable =False
             self.changeColor(0)
-
 
     def changeColor(self, colorNum):
         '''
@@ -386,8 +324,9 @@ class DrawingBoardUIBusi(QMainWindow):
         colorDic = {0: Qt.black, 1: Qt.blue, 2: Qt.red}
 
         self.pen.setColor(colorDic[colorNum])
+        # self.paint_to_pix.setPen(self.pen)  # 更新paint_to_pix
         self.penColor = colorNum
-        self.pen.setWidth(4)  # 设置黑板擦宽度
+        self.pen.setWidth(4)
 
     def nextPage(self):
         '''
@@ -395,51 +334,65 @@ class DrawingBoardUIBusi(QMainWindow):
         :return:
         '''
 
+        if self.isWritten:
+            # 当前页有输入或改动则保存当前页
+            self.savePicture(True)
+            # self.pos_pages[self.page] = self.pos_xyc  # 记录当前页笔画路径
+            self.isWritten = False # 关闭改动标志
+
         if self.page == self.pages:
 
-            # 当前页为最后一页，保存当前页的内容
-            self.savePicture(True)  # 保存当前页内容
-            self.pos_pages[self.page] = self.pos_xyc  # 记录当前页笔画路径
-
-            # 开辟新一页
-            self.pos_xyc = []  # 当前页路径清空
-            self.pages += 1  # 页码加一
+            # 开辟新一页，总页数加一
+            # self.pos_xyc = []  # 当前页路径清空
+            self.pages += 1  # 页总数加一
+            self.pix.fill(Qt.white)  # 清空画布
 
         else:
+            # 当前页并非最后一页
+            fileName = str(self.page + 1)
+            readFileName = os.path.join(self.filePath, 'temp', fileName + '.png')
+            QPixmapCache.clear()
+            self.pix.load(readFileName)
 
-            # 当前页并非最后一页，直接读取下一页路径
-            self.pos_xyc = self.pos_pages[self.page + 1]
+            # self.pos_xyc = self.pos_pages[self.page + 1]
 
-        self.pix.fill(Qt.white)  # 清空画布
+
         self.update()   # 更新内容
         self.page = self.page + 1  # 当前页码加一
         self.setWindowTitle('当前' + str(self.page) + '/' + str(self.pages) + '页')  # 更新标题栏显示的页码
+
+        logger.debug('下翻页第%s页', self.page)
 
     def previousPage(self):
         '''
         切换到上一页画布
         :return:
         '''
-        logger.debug('切换上一页self.page>1 %s', self.page > 1)
 
-        if self.page == self.pages:
-
-            # 当前页为最后一页，记录最后一页内容
-            self.pos_pages[self.page] = self.pos_xyc
+        if self.isWritten or (self.page == self.pages):
+            # 当前页有输入或改动则保存当前页
             self.savePicture(True)
+            # self.pos_pages[self.page] = self.pos_xyc  # 记录当前页笔画路径
+            self.isWritten = False # 关闭改动标志
 
         if self.page > 1:
             # 当前页码非第一页
-            self.page -= 1
-            self.pos_xyc = self.pos_pages[self.page]
+            self.page -= 1 # 当前页码减一
+            fileName = str(self.page)
+            readFileName = os.path.join(self.filePath, 'temp', fileName + '.png')
+            QPixmapCache.clear() # 清空画布
+            self.pix.load(readFileName)
+
+            # self.pos_xyc = self.pos_pages[self.page]
 
         else:
             # 当前页码为第一页
             pass
 
-        self.pix.fill(Qt.white)  # 清空画布
         self.update()  # 更新内容
         self.setWindowTitle('当前' + str(self.page) + '/' + str(self.pages) + '页')  # 更新标题栏显示的页码
+
+        logger.debug('上翻页第%s页', self.page)
 
     def switch(self):
         '''切换'''
@@ -454,46 +407,56 @@ class DrawingBoardUIBusi(QMainWindow):
         '''
         # 保存目录 './save/日期+会议号/'
         time = QDateTime.currentDateTime().toString("yyyy-MM-dd_")
-        meetingID = meetingID
-        filePath = os.path.join(os.getcwd(), 'save', time + meetingID)
+        self.meetingID = meetingID
+        self.filePath = os.path.join(os.getcwd(), 'save', time + self.meetingID)
         # 创建目录
-        if not os.path.exists(filePath):
-            os.makedirs(filePath)
-            os.makedirs(os.path.join(filePath, 'temp'))
+        if not os.path.exists(self.filePath):
+            os.makedirs(self.filePath)
+            os.makedirs(os.path.join(self.filePath, 'temp'))
 
         if flag:
 
             # 自动保存分为两部分：1.保存图片到本地 2.保存保存路径json文件到本地
             # 1.保存图片到本地
-            fileName = QDateTime.currentDateTime().toString('yyMMddhhmmss')
-            logger.debug('fileName %s', fileName)
-            self.pix.save(os.path.join(filePath, 'temp', fileName + '.png'))
+            # fileName = QDateTime.currentDateTime().toString('yyMMddhhmmss')
+            fileName = str(self.page) # 以页码为图片名
+            logger.debug('filePath %s', os.path.join(self.filePath, 'temp', fileName + '.png'))
+            self.pix.save(os.path.join(self.filePath, 'temp', fileName + '.png'))
             logger.debug('保存图片')
 
             # 2.保存保存路径json文件到本地
             import json
             dict = {'pox_xyc': self.pos_xyc,
                     'page': self.page,
-                    'meetingID': meetingID
+                    'meetingID': self.meetingID
                     }
             # logger.debug('dict: %s', dict)
 
-            with open(os.path.join(filePath, 'temp', fileName + '.json'), 'w') as f:
+            with open(os.path.join(self.filePath, 'temp', fileName + '.json'), 'w') as f:
                 json.dump(dict, f)
             logger.debug('保存json文件')
 
         else:
 
             # 用户手动保存
-            fileName = QFileDialog.getSaveFileName(self, '保存图片', filePath, ".png;;.jpg")
+            fileName = QFileDialog.getSaveFileName(self, '保存图片', self.filePath, ".png;;.jpg")
             self.pix.save(fileName[0] + fileName[1])
 
     def clearScree(self):
         '''清屏'''
 
-        self.pos_xyc.clear()
+        # self.pos_xyc.clear()
         self.update()
         self.pix.fill(Qt.white)
+
+    def closeEvent(self):
+        '''
+        关闭白板时保存当前画板内容
+        :return:
+        '''
+        logger.debug('关闭事件')
+        if self.isWritten:
+            self.savePicture(True)
 
 
 if __name__ == '__main__':

@@ -10,6 +10,7 @@ import sys
 from pykeyboard import PyKeyboard
 import time
 
+k = PyKeyboard()    # 模拟键盘
 
 class MainWindowBusi(QMainWindow, Ui_mainWindow):
     def __init__(self):
@@ -26,23 +27,27 @@ class MainWindowBusi(QMainWindow, Ui_mainWindow):
 
         # 设置退出按钮
         self.pushButton_exit.clicked.connect(self.closeAction)
+        self.pushButton_exit.setToolTip('点击退出程序')
+
+        # 设置分享按钮
+        self.pushButton_share.setToolTip('开启分享功能')
+        self.pushButton_share.clicked.connect(self.share)
 
         # 设置主窗口禁止调整大小
         self.setFixedSize(self.width(), self.height())
 
         # 设置窗体无边框
-        # self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowSystemMenuHint)
-        # self.setWindowFlags(Qt.CustomizeWindowHint | Qt.WindowTitleHint )
+        # self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowSystemMenuHint) # 窗体无边框，有菜单栏
+        # self.setWindowFlags(Qt.FramelessWindowHint) # 窗体无边框
         # self.setWindowFlags(Qt.CustomizeWindowHint | Qt.WindowSystemMenuHint | Qt.WindowStaysOnTopHint)
-        self.setWindowFlags(Qt.CustomizeWindowHint | Qt.WindowSystemMenuHint)
+        # self.setWindowFlags(Qt.CustomizeWindowHint) # 自定义标题栏
+        self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint) # 窗体无边框
 
         # 获得白板对象
         self.dbb = DrawingBoardUIBusi()
 
         # 设置样式
         self.setStyle()
-
-        # 窗体收起
 
         # 允许拖拽PPT文件到程序上
         self.setAcceptDrops(True)
@@ -130,6 +135,14 @@ class MainWindowBusi(QMainWindow, Ui_mainWindow):
 
         cmenu.exec_(self.mapToGlobal(event.pos()))
 
+    def share(self):
+        '''
+        分享功能
+        :return:
+        '''
+
+        pass
+
     def closeAction(self):
         '''退出程序'''
 
@@ -163,7 +176,6 @@ class MainWindowBusi(QMainWindow, Ui_mainWindow):
             QMessageBox.information(self, '提示', '不是幻灯片文件，请重新选择！', QMessageBox.Yes)
 
         # 打开ppt
-        k = PyKeyboard()
         time.sleep(4)
         k.tap_key(k.function_keys[5])
         time.sleep(3)
@@ -187,7 +199,7 @@ class MainWindowBusi(QMainWindow, Ui_mainWindow):
     def setStyle(self):
         '''加载样式表'''
 
-        file = QFile('qrc\style3.qss')
+        file = QFile('qrc\style.qss')
         file.open(QIODevice.ReadOnly)
         styleSheet = QTextStream(file).readAll()
         qApp.setStyleSheet(styleSheet)
@@ -211,7 +223,6 @@ class MainWindowBusi(QMainWindow, Ui_mainWindow):
         system('start ' + url)
 
         # 打开ppt
-        k = PyKeyboard()
         time.sleep(4)
         k.tap_key(k.function_keys[5])
         time.sleep(3)

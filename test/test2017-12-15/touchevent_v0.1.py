@@ -23,6 +23,7 @@ class Winform(QWidget):
         self.endPoint_m = QPointF()  # 鼠标点后一点
 
         self.pix = QPixmap()  # 画布
+        self.penWidth = 1;
 
         self.pen = QPen(Qt.black, 6, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin)  # 画笔
         self.pen.setColor(QColor(0, 0, 0))  # 设置初始颜色
@@ -33,7 +34,7 @@ class Winform(QWidget):
 
         # 设置接受触摸屏
         self.setAttribute(Qt.WA_AcceptTouchEvents, True)
-        QCoreApplication.setAttribute(Qt.AA_SynthesizeTouchForUnhandledMouseEvents, False)
+        # QCoreApplication.setAttribute(Qt.AA_SynthesizeTouchForUnhandledMouseEvents,False)
 
         # 窗口大小设置为800*600
         self.resize(self.cp.width() * 0.9, self.cp.height() * 0.9)
@@ -57,11 +58,15 @@ class Winform(QWidget):
                     self.lastPoint_m.y() - self.endPoint_m.y()) ** 2)) + 1
 
         # print('distance', distance)
-
-        # self.pp.drawLine(self.lastPoint_m, self.endPoint_m)
-        self.pp.begin(self.pix)
-        self.drawLines(distance, self.lastPoint_m, self.endPoint_m)
-        self.pp.end()
+        distance = math.sqrt(distance)
+        if distance > 6:
+            distance = 6
+        elif distance < 4:
+            distance = 4;
+        # self.pen.setWidthF(25 / distance)
+        self.pen.setWidthF(self.penWidth)
+        self.pp.setPen(self.pen)
+        self.pp.drawLine(self.lastPoint_m, self.endPoint_m)
         # self.pix.save('1.png') # 保存图片
 
         # self.pp.drawPoints(self.lastPoint,self.endPoint)
@@ -74,7 +79,7 @@ class Winform(QWidget):
 
     def paintTouchEvent(self):
 
-        # 根据触摸点前后两个位置绘制直线
+        # 根据鼠标指针前后两个位置绘制直线
         distance = int(
             math.sqrt(
                 (self.lastPoint_t.x() - self.endPoint_t.x()) ** 2 + (
@@ -86,8 +91,10 @@ class Winform(QWidget):
             distance = 6
         elif distance < 4:
             distance = 4;
-        self.pen.setWidthF(18 / distance)
+        # self.pen.setWidthF(18 / distance)
+        self.pen.setWidthF(self.penWidth)
         self.pp.setPen(self.pen)
+
         self.pp.drawLine(self.lastPoint_t, self.endPoint_t)
         # self.pix.save('1.png') # 保存图片
 
@@ -165,9 +172,9 @@ class Winform(QWidget):
         '''
         touchPoints = event.touchPoints()
         for point in touchPoints:
-            logger.debug('触摸点的直径：', point.ellipseDiameters())
-            logger.debug('触摸点的压力：', point.pressure())
-            logger.debug('触摸点的状态：', point.state())
+            # logger.debug('触摸点的直径：', point.ellipseDiameters())
+            print(point.ellipseDiameters().width())
+            self.penWidth = point.ellipseDiameters().width()
             self.lastPoint_t = point.lastPos()
             self.endPoint_t = point.pos()
             print('lastPoint', self.lastPoint_t)
@@ -179,47 +186,7 @@ class Winform(QWidget):
             self.paintTouchEvent()  # 手动调绘图事件
         self.update()  #
 
-    def drawLines(self, distance, startPoint, endPoint):
-        '''
 
-        :param distance:
-        :param startPoint:
-        :param endPoint:
-        :return:
-        '''
-        distance_sqrt = math.sqrt(distance)
-        if distance_sqrt > 8:
-            distance_sqrt = 6
-        elif distance_sqrt < 4:
-            distance_sqrt = 4;
-        print(distance)
-        if distance > 40:
-            self.pen.setColor(QColor(40, 40, 40))  # 设置初始颜色
-        else:
-            self.pen.setColor(QColor(distance, distance, distance))  # 设置初始颜色
-
-
-        self.pen.setWidthF(25 / distance_sqrt)  # 设置笔宽
-        self.pp.setPen(self.pen)
-        points = []
-        points.append(startPoint)
-
-        num_add_point = 10
-        add_x = endPoint.x() - startPoint.x()
-        add_y = endPoint.y() - startPoint.y()
-        for i in range(1, num_add_point + 1):
-            points.append(
-                QPointF(startPoint.x() + i * add_x / num_add_point, startPoint.y() + i * add_y / num_add_point))
-
-        points.append(endPoint)
-        for i in range(num_add_point + 1):
-            # print(points[i])
-            self.pp.drawLine(points[i], points[i + 1])
-
-    def keyPressEvent(self, event):
-        if event.key() == Qt.Key_C:
-            self.pix.fill(Qt.white)
-            self.update()
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     form = Winform()

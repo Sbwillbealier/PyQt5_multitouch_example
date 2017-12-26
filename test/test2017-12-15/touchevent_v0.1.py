@@ -1,7 +1,7 @@
 import sys
 import math
 from PyQt5.QtWidgets import QApplication, QWidget, QDesktopWidget
-from PyQt5.QtGui import QPainter, QPixmap, QPen, QTouchEvent, QColor
+from PyQt5.QtGui import QPainter, QPixmap, QPen, QTouchEvent, QColor, QMouseEvent
 from PyQt5.QtCore import Qt, QPoint, QEvent, QCoreApplication, QPointF, QLineF
 import logging
 
@@ -34,10 +34,11 @@ class Winform(QWidget):
 
         # 设置接受触摸屏
         self.setAttribute(Qt.WA_AcceptTouchEvents, True)
-        # QCoreApplication.setAttribute(Qt.AA_SynthesizeTouchForUnhandledMouseEvents,False)
+        # QCoreApplication.setAttribute(Qt.AA_SynthesizeTouchForUnhandledMouseEvents,False) # 禁用将触摸事件转为鼠标事件
 
         # 窗口大小设置为800*600
         self.resize(self.cp.width() * 0.9, self.cp.height() * 0.9)
+        self.setWindowOpacity(0.7) # 设置透明度
 
         # 画布大小为400*400，背景为白色
         self.pix = QPixmap(self.cp.width(), self.cp.height())
@@ -64,7 +65,7 @@ class Winform(QWidget):
         elif distance < 4:
             distance = 4;
         # self.pen.setWidthF(25 / distance)
-        self.pen.setWidthF(self.penWidth)
+        self.pen.setWidthF(self.penWidth) # 采用触摸点大小作为笔宽
         self.pp.setPen(self.pen)
         self.pp.drawLine(self.lastPoint_m, self.endPoint_m)
         # self.pix.save('1.png') # 保存图片
@@ -92,7 +93,7 @@ class Winform(QWidget):
         elif distance < 4:
             distance = 4;
         # self.pen.setWidthF(18 / distance)
-        self.pen.setWidthF(self.penWidth)
+        self.pen.setWidthF(self.penWidth) # 采用触摸点大小作为笔宽
         self.pp.setPen(self.pen)
 
         self.pp.drawLine(self.lastPoint_t, self.endPoint_t)
@@ -119,6 +120,7 @@ class Winform(QWidget):
         if event.buttons() and Qt.LeftButton:
             self.endPoint_m = event.pos()
             # 进行重新绘制
+            print('鼠标事件源', event.source())
             self.update()
 
     def mouseReleaseEvent(self, event):
@@ -137,31 +139,26 @@ class Winform(QWidget):
         '''
         # print(type(watched))
         if watched == form:
-            # print('watched==form')
-            # print(event.type())
+
             if event.type() == QEvent.TouchBegin:
                 pass
             if event.type() == QEvent.TouchUpdate or event.type() == QEvent.TouchEnd:
                 # print('触点开始', QTouchEvent(event).touchPoints())
                 logger.debug('TouchEvent')
                 self.addline(QTouchEvent(event))
-
+                return True
+            if event.type() == QEvent.MouseButtonDblClick or event.type() == QEvent.MouseMove or event.type() == QEvent.MouseButtonRelease or event.type() == QEvent.MouseButtonPress:
+                mouse_event = QMouseEvent(event)
+                if mouse_event!=None and mouse_event.source() == Qt.MouseEventSynthesizedBySystem:
+                    # 鼠标事件存在并且是有系统将触摸事件整合过来的
+                    mouse_event.ignore()
+                    return True
             if event.type() == QEvent.Paint:
-                logger.debug('PaintEvent')
+                # logger.debug('PaintEvent')
                 self.paintEvent()
                 # self.update()
                 return True
         return QWidget.eventFilter(self, watched, event)  # 其他情况会返回系统默认的事件处理方法。
-
-    # def event(self, event):
-    #     if event.type() == QEvent.TouchBegin:
-    #         return True
-    #     if event.type() == QEvent.TouchBegin or event.type() == QEvent.TouchUpdate or event.type() == QEvent.TouchEnd:
-    #         # print('触点开始', QTouchEvent(event).touchPoints())
-    #         # self.addline(QTouchEvent(event))
-    #         return True
-    #
-    #     return QWidget.event(self, event)
 
 
     def addline(self, event):
@@ -184,8 +181,12 @@ class Winform(QWidget):
             line.setP2(self.lastPoint_t)
             self.lines.append(line)
             self.paintTouchEvent()  # 手动调绘图事件
-        self.update()  #
+        # self.update()  #
 
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_C:
+            self.pix.fill(Qt.white)
+            self.update()
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

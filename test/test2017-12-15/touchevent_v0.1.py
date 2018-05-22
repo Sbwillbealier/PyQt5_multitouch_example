@@ -2,7 +2,7 @@ import sys
 import math
 from PyQt5.QtWidgets import QApplication, QWidget, QDesktopWidget
 from PyQt5.QtGui import QPainter, QPixmap, QPen, QTouchEvent, QColor, QMouseEvent
-from PyQt5.QtCore import Qt, QPoint, QEvent, QCoreApplication, QPointF, QLineF
+from PyQt5.QtCore import Qt, QEvent, QCoreApplication, QPointF, QLineF
 import logging
 
 logger = logging.getLogger(__name__)
@@ -23,7 +23,7 @@ class Winform(QWidget):
         self.endPoint_m = QPointF()  # 鼠标点后一点
 
         self.pix = QPixmap()  # 画布
-        self.penWidth = 1;
+        self.penWidth = 1
 
         self.pen = QPen(Qt.black, 6, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin)  # 画笔
         self.pen.setColor(QColor(0, 0, 0))  # 设置初始颜色
@@ -37,7 +37,7 @@ class Winform(QWidget):
         # QCoreApplication.setAttribute(Qt.AA_SynthesizeTouchForUnhandledMouseEvents,False) # 禁用将触摸事件转为鼠标事件
 
         # 窗口大小设置为800*600
-        self.resize(self.cp.width() * 0.9, self.cp.height() * 0.9)
+#         self.resize(self.cp.width() * 0.9, self.cp.height() * 0.9)
         self.setWindowOpacity(0.7) # 设置透明度
 
         # 画布大小为400*400，背景为白色
@@ -91,7 +91,7 @@ class Winform(QWidget):
         if distance > 6:
             distance = 6
         elif distance < 4:
-            distance = 4;
+            distance = 4
         # self.pen.setWidthF(18 / distance)
         self.pen.setWidthF(self.penWidth) # 采用触摸点大小作为笔宽
         self.pp.setPen(self.pen)
